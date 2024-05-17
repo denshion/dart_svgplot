@@ -25,7 +25,6 @@ start using the package.
 ## Usage
 
 ![Example: ./example.svg](./example.svg)
-<img src="./example.svg">
 
 ```dart
   List<double> x = List.generate(55, (i) => i / 5);

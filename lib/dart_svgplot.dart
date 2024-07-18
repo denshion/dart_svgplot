@@ -190,8 +190,8 @@ class SvgGraphAxis {
   String? _clipPathTag;
 
 
-  late List<double> xTicks;
-  late List<double> yTicks;
+  List<double> xTicks = [];
+  List<double> yTicks = [];
 
   TickPositionGenerator xTickPositionGenerator = TickPositionGenerators.goodIntervals();
   TickPositionGenerator yTickPositionGenerator = TickPositionGenerators.goodIntervals();
@@ -224,10 +224,16 @@ class SvgGraphAxis {
     }
   ){
     if (xAxisAutoSet) {
-      autoSetXLimits(data.map((e) => e.x).reduce(min), data.map((e) => e.x).reduce(max));
+      final xFinite = data.map((e) => e.x).where((e) => e.isFinite);
+      if (xFinite.isNotEmpty) {
+        autoSetXLimits(xFinite.reduce(min), xFinite.reduce(max));
+      }
     }
     if (yAxisAutoSet) {
-      autoSetYLimits(data.map((e) => e.y).reduce(min), data.map((e) => e.y).reduce(max));
+      final yFinite = data.map((e) => e.y).where((e) => e.isFinite);
+      if (yFinite.isNotEmpty) {
+        autoSetYLimits(yFinite.reduce(min), yFinite.reduce(max));
+      }
     }
 
     final List<SvgGraphPoint> processedPoints =
@@ -249,8 +255,8 @@ class SvgGraphAxis {
   }
 
   void autoSetXLimits(num xmin, num xmax){
-    if (xmin == xmax) {
-      if (xmax == 0) {
+    if (xmin == xmax && this.xmin.isInfinite) {
+      if (xmax == 0 || xmax.isNaN) {
         this.xmin = -1.0;
         this.xmax = 1.0;
       } else if (xmax < 0) {
@@ -268,8 +274,8 @@ class SvgGraphAxis {
   }
 
   void autoSetYLimits(num ymin, num ymax){
-    if (ymin == ymax) {
-      if (ymax == 0) {
+    if (ymin == ymax && this.ymin.isInfinite) {
+      if (ymax == 0 || ymax.isNaN) {
         this.ymin = -1.0;
         this.ymax = 1.0;
       } else if (ymax < 0) {
@@ -283,7 +289,6 @@ class SvgGraphAxis {
       this.ymin = (this.ymin > ymin ? ymin : this.ymin).toDouble();
       this.ymax = (this.ymax < ymin ? ymax : this.ymax).toDouble();
     }
-    print('min: ${this.ymin}, max: ${this.ymax}');
     yTicks = yTickPositionGenerator(AxisInfo(min: this.ymin, max: this.ymax));
   }
 
@@ -511,6 +516,7 @@ class SvgGraphAxis {
     );
   }
 }
+
 
 extension RelativeFlip on Point {
   Point get yFlip => Point(x, 1.0 - y);
@@ -783,7 +789,6 @@ class TickPositionGenerators {
                     : b;
             }
           );
-    print('Best interval: ${bestInterval.interval} - ${bestInterval.tickCount} ticks');
     int minShiftedInTickIntervals = (ax.min / bestInterval.interval).ceil();
     return List<double>.generate(
       bestInterval.tickCount,
@@ -806,7 +811,7 @@ class AxisInfo {
   final double min;
   final double max;
 
-  AxisInfo({required this.min, required this.max});
+  const AxisInfo({required this.min, required this.max});
 }
 
 @immutable
@@ -814,5 +819,5 @@ class _IntervalAndTickCount {
   final double interval;
   final int tickCount;
 
-  _IntervalAndTickCount(this.interval, this.tickCount);
+  const _IntervalAndTickCount(this.interval, this.tickCount);
 }

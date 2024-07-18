@@ -249,14 +249,41 @@ class SvgGraphAxis {
   }
 
   void autoSetXLimits(num xmin, num xmax){
-    this.xmin = (this.xmin > xmin ? xmin : this.xmin).toDouble();
-    this.xmax = (this.xmax < xmin ? xmax : this.xmax).toDouble();
+    if (xmin == xmax) {
+      if (xmax == 0) {
+        this.xmin = -1.0;
+        this.xmax = 1.0;
+      } else if (xmax < 0) {
+        this.xmin = xmax * 0.8;
+        this.xmax = xmax * 1.2;
+      } else {
+        this.xmin = xmax * 1.2;
+        this.xmax = xmax * 0.8;
+      }
+    } else {
+      this.xmin = (this.xmin > xmin ? xmin : this.xmin).toDouble();
+      this.xmax = (this.xmax < xmin ? xmax : this.xmax).toDouble();
+    }
     xTicks = xTickPositionGenerator(AxisInfo(min: this.xmin, max: this.xmax));
   }
 
   void autoSetYLimits(num ymin, num ymax){
-    this.ymin = (this.ymin > ymin ? ymin : this.ymin).toDouble();
-    this.ymax = (this.ymax < ymin ? ymax : this.ymax).toDouble();
+    if (ymin == ymax) {
+      if (ymax == 0) {
+        this.ymin = -1.0;
+        this.ymax = 1.0;
+      } else if (ymax < 0) {
+        this.ymin = ymax * 1.2;
+        this.ymax = ymax * 0.8;
+      } else {
+        this.ymin = ymax * 0.8;
+        this.ymax = ymax * 1.2;
+      }
+    } else {
+      this.ymin = (this.ymin > ymin ? ymin : this.ymin).toDouble();
+      this.ymax = (this.ymax < ymin ? ymax : this.ymax).toDouble();
+    }
+    print('min: ${this.ymin}, max: ${this.ymax}');
     yTicks = yTickPositionGenerator(AxisInfo(min: this.ymin, max: this.ymax));
   }
 
@@ -731,7 +758,13 @@ class TickPositionGenerators {
     int desiredTickCount = 6,
     bool forceTicksAtAxisEnds = false
   }) => (AxisInfo ax) {
+    if (!ax.max.isFinite || !ax.min.isFinite || (ax.max - ax.min) == 0){
+      return [];
+    }
     double tickIntervalFirstGuess = (ax.max - ax.min) / desiredTickCount.toDouble();
+    if (!(log(tickIntervalFirstGuess) / ln10).isFinite) {
+      return [];
+    }
     final intervalOrderOfMagnitude = pow(10, (log(tickIntervalFirstGuess) / ln10).floor());
     final List<double> intervalGuesses = 
         goodIntervals.map((e) => e * intervalOrderOfMagnitude).toList()
